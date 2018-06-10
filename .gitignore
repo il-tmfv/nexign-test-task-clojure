@@ -14,3 +14,4 @@ pom.xml
 .idea/
 nexign-test-task-clojure.iml
 .DS_Store
+.rebel_readline_history
