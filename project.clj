@@ -10,6 +10,8 @@
 
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.10.238"]
+                 [reagent "0.8.1"]
+                 [re-frame "0.10.5"]
                  [org.clojure/core.async  "0.4.474"]]
 
   :plugins [[lein-figwheel "0.5.16"]

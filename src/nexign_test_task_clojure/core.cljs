@@ -1,17 +1,20 @@
 (ns nexign-test-task-clojure.core
-    (:require ))
+  (:require [reagent.core :as r]
+            [re-frame.core :as re]
+            [nexign-test-task-clojure.views :refer [app]]
+            [nexign-test-task-clojure.events]
+            [nexign-test-task-clojure.state]))
 
 (enable-console-print!)
 
-(println "This text is printed from src/nexign-test-task-clojure/core.cljs. Go ahead and edit it and see reloading in action.")
+(re/dispatch-sync [:init-db])
 
 ;; define your app data so that it doesn't get over-written on reload
-
-(defonce app-state (atom {:text "Hello world!"}))
-
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
-)
+  )
+
+(r/render app (.getElementById js/document "app"))
