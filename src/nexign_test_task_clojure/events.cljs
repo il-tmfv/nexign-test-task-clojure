@@ -8,7 +8,7 @@
 (def base-url "http://localhost:3333")
 
 (def initial-db-state {
-                       :inputRef               nil
+                       :input-ref              nil
                        :players                []
                        :games                  []
                        :no-games-found         false
@@ -29,7 +29,7 @@
 (re/reg-event-db :set-input-ref
                  (fn [db event]
                    (let [ref (second event)]
-                     (assoc db :inputRef ref))))
+                     (assoc db :input-ref ref))))
 
 (re/reg-event-db :remove-player
                  (fn [db event]
@@ -52,26 +52,30 @@
                       :db         (assoc db :loading? true)
                       })))
 
-(re/reg-event-db :on-player-added
-                 (fn [db event]
+(re/reg-event-fx :on-player-added
+                 (fn [{:keys [db]} event]
                    (let [success (-> event second :response :success)
                          username (:new-player-input-value db)]
-                     (if (= success 1)
-                       (-> db
-                           (assoc :new-player-input-value "")
-                           (assoc :error "")
-                           (assoc :loading? false)
-                           (update :players conj {:steamid (-> event second :response :steamid) :username username}))
-                       (-> db
-                           (assoc :error "Error getting steamid")
-                           (assoc :loading? false))
-                       ))))
+                     {:db
+                                      (if (= success 1)
+                                        (-> db
+                                            (assoc :new-player-input-value "")
+                                            (assoc :error "")
+                                            (assoc :loading? false)
+                                            (update :players conj {:steamid (-> event second :response :steamid) :username username}))
+                                        (-> db
+                                            (assoc :error "Error getting steamid")
+                                            (assoc :loading? false))
+                                        )
+                      :focus-on-input {:input-ref (:input-ref db) :select (-> success (= 1) not)}})))
 
-(re/reg-event-db :on-add-player-error
-                 (fn [db _]
-                   (-> db
-                       (assoc :loading? false)
-                       (assoc :error "Error getting steamid"))))
+(re/reg-event-fx :on-add-player-error
+                 (fn [{:keys [db]} _]
+                   {:db
+                                    (-> db
+                                        (assoc :loading? false)
+                                        (assoc :error "Error getting steamid"))
+                    :focus-on-input {:input-ref (:input-ref db) :select true}}))
 
 (defn steamids [db]
   (let [players (get db :players [])]

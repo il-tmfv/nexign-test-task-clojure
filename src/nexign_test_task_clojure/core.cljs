@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :as re]
             [nexign-test-task-clojure.subs]
+            [nexign-test-task-clojure.effects]
             [nexign-test-task-clojure.views :refer [app]]
             [nexign-test-task-clojure.events]))
 
