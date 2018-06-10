@@ -13,3 +13,4 @@ pom.xml
 .nrepl-port
 .idea/
 nexign-test-task-clojure.iml
+.DS_Store
