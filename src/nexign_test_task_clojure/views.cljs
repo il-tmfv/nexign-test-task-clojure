@@ -1,26 +1,30 @@
 (ns nexign-test-task-clojure.views
-  (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [re-frame.core :as re]))
 
 
 (defn loading []
   [:div.Loading "Loading"])
 
-(defn error [{:keys [text]}]
-  (if text [:div.Error text] nil))
+(defn error []
+  (let [error-text @(re/subscribe [:error])]
+    (if (-> error-text count (> 0))
+      [:div.Error error-text]
+      nil)))
 
 (defn player [{:keys [steamid username on-delete-click]}]
-  [:div.Player
+  [:div.Player {:key steamid}
    [:div.Player__texts
     [:div.Player__username username]
     [:div.Player__steamid (str "id:" steamid)]]
-   [:button.Player__delete-btn {:on-click on-delete-click}]])
+   [:button.Player__delete-btn {:on-click on-delete-click} "X"]])
 
-(defn players-list [{:keys [list on-delete-click]}]
+(defn players-list []
   [:div.PlayersList
    (map
      (fn [{:keys [username steamid]}]
-       (player {:username username :steamid steamid :on-delete-click on-delete-click}))
-     list)])
+       (player {:username username :steamid steamid :on-delete-click #(re/dispatch [:remove-player steamid])}))
+     @(re/subscribe [:players]))])
 
 (defn game [{:keys [appid name userscore genre]}]
   [:div.Game
@@ -38,32 +42,33 @@
                  (game {:appid appid :name name :userscore userscore :genre genre}))
                list))])
 
-(defn add-new-player-form [{:keys [new-player-input-value
-                                   disabled-submit
-                                   disabled-input
-                                   disabled-find-games
-                                   loading
-                                   on-submit
-                                   on-input-ref-ready
-                                   on-input-change
-                                   on-find-games-click]}]
-  [:form.AddNewPlayerForm {:on-submit #(-> % .-preventDefault on-submit)}
-   [:input {:ref       on-input-ref-ready
-            :disabled  disabled-input
-            :on-change on-input-change
-            :value     new-player-input-value
+(defn add-new-player-form []
+  [:form.AddNewPlayerForm
+   {:on-submit #(do
+                  (.preventDefault %)
+                  (re/dispatch [:try-add-new-player]))}
+   [:input {:ref       #(re/dispatch [:set-input-ref %])
+            :disabled  @(re/subscribe [:loading?])
+            :on-change #(re/dispatch [:on-form-input-change (-> % .-target .-value)])
+            :value     @(re/subscribe [:new-player-input-value])
             :type      "text"
             :name      "new-player-username"
             :autoFocus true}]
-   [:button {:disabled disabled-submit
+   [:button {:disabled @(re/subscribe [:add-new-player-disabled])
              :type     "submit"} "Add"]
-   [:button {:disabled disabled-find-games
-             :on-click on-find-games-click
+   [:button {:disabled @(re/subscribe [:get-games-disabled])
+             :on-click #()
              :type     "button"} "Find games"]
-   loading
+   (when @(re/subscribe [:loading?]) [loading])
    ])
 
 (defn app []
   [:div.App
-   [error {:text "subscribe for error here"}]
-   [add-new-player-form {}]])
+   [error]
+   [add-new-player-form]
+   [players-list]])
+
+
+;deletePlayer = steamid => {
+;                           this.players = this.players.filter(x => x.steamid !== steamid);
+;                           };

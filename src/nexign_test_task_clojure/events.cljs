@@ -1,5 +1,10 @@
 (ns nexign-test-task-clojure.events
-  (:require [re-frame.core :as re]))
+  (:require
+    [ajax.core :as ajax]
+    [re-frame.core :as re]
+    [day8.re-frame.http-fx]))
+
+(def base-url "http://localhost:3333")
 
 (def initial-db-state {
                        :inputRef               nil
@@ -7,7 +12,7 @@
                        :games                  []
                        :no-games-found         false
                        :error                  ""
-                       :loading                false
+                       :loading?               false
                        :new-player-input-value ""
                        })
 
@@ -17,7 +22,7 @@
 
 (re/reg-event-db :on-form-input-change
                  (fn [db event]
-                   (let [value (-> event second .target .value)]
+                   (let [value (second event)]
                      (assoc db :new-player-input-value value))))
 
 (re/reg-event-db :set-input-ref
@@ -25,3 +30,44 @@
                    (let [ref (second event)]
                      (assoc db :inputRef ref))))
 
+(re/reg-event-db :remove-player
+                 (fn [db event]
+                   (let [players (:players db)
+                         steamid (second event)
+                         filtered-players (filter #(not (= (:steamid %) steamid)) players)]
+                     (assoc db :players filtered-players))))
+
+(re/reg-event-fx :try-add-new-player
+                 (fn [{:keys [db]} _]
+                   (let [username (:new-player-input-value db)
+                         uri (str base-url "/steamid?username=" username)]
+                     {
+                      :http-xhrio {:method          :get
+                                   :uri             uri
+                                   :format          (ajax/json-request-format)
+                                   :response-format (ajax/json-response-format {:keywords? true})
+                                   :on-success      [:on-player-added]
+                                   :on-failure      [:on-add-player-error]}
+                      :db         (assoc db :loading? true)
+                      })))
+
+(re/reg-event-db :on-player-added
+                 (fn [db event]
+                   (let [success (-> event second :response :success)
+                         username (:new-player-input-value db)]
+                     (if (= success 1)
+                       (-> db
+                           (assoc :new-player-input-value "")
+                           (assoc :error "")
+                           (assoc :loading? false)
+                           (update :players conj {:steamid (-> event second :response :steamid) :username username}))
+                       (-> db
+                           (assoc :error "Error getting steamid")
+                           (assoc :loading? false))
+                       ))))
+
+(re/reg-event-db :on-add-player-error
+                 (fn [db _]
+                   (-> db
+                       (assoc :loading? false)
+                       (assoc :error "Error getting steamid"))))
