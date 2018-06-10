@@ -27,20 +27,21 @@
      @(re/subscribe [:players]))])
 
 (defn game [{:keys [appid name userscore genre]}]
-  [:div.Game
+  [:div.Game {:key appid}
    [:div.Game__data-col
     [:div.Game__name name]
     [:div.Game__genre genre]]
    [:div.Game__userscore userscore]
-   [:a.Game__launch-link {:href (str "steam://run/" appid)}]])
+   [:a.Game__launch-link {:href (str "steam://run/" appid)} "Go!"]])
 
-(defn games-list [{:keys [list empty]}]
+(defn games-list []
   [:div.PlayersList
-   (if empty [:div.GamesList__empty-indicator "No games found :("]
-             (map
-               (fn [{:keys [appid name userscore genre]}]
-                 (game {:appid appid :name name :userscore userscore :genre genre}))
-               list))])
+   (if @(re/subscribe [:no-games-found])
+     [:div.GamesList__empty-indicator "No games found :("]
+     (map
+       (fn [{:keys [appid name userscore genre]}]
+         (game {:appid appid :name name :userscore userscore :genre genre}))
+       @(re/subscribe [:games])))])
 
 (defn add-new-player-form []
   [:form.AddNewPlayerForm
@@ -57,7 +58,7 @@
    [:button {:disabled @(re/subscribe [:add-new-player-disabled])
              :type     "submit"} "Add"]
    [:button {:disabled @(re/subscribe [:get-games-disabled])
-             :on-click #()
+             :on-click #(re/dispatch [:try-get-games])
              :type     "button"} "Find games"]
    (when @(re/subscribe [:loading?]) [loading])
    ])
@@ -66,9 +67,5 @@
   [:div.App
    [error]
    [add-new-player-form]
-   [players-list]])
-
-
-;deletePlayer = steamid => {
-;                           this.players = this.players.filter(x => x.steamid !== steamid);
-;                           };
+   [players-list]
+   [games-list]])

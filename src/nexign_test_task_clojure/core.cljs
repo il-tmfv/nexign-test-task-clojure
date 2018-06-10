@@ -3,8 +3,7 @@
             [re-frame.core :as re]
             [nexign-test-task-clojure.subs]
             [nexign-test-task-clojure.views :refer [app]]
-            [nexign-test-task-clojure.events]
-            [nexign-test-task-clojure.state]))
+            [nexign-test-task-clojure.events]))
 
 (enable-console-print!)
 

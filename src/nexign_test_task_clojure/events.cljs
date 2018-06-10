@@ -1,5 +1,6 @@
 (ns nexign-test-task-clojure.events
   (:require
+    [clojure.string :as s]
     [ajax.core :as ajax]
     [re-frame.core :as re]
     [day8.re-frame.http-fx]))
@@ -71,3 +72,36 @@
                    (-> db
                        (assoc :loading? false)
                        (assoc :error "Error getting steamid"))))
+
+(defn steamids [db]
+  (let [players (get db :players [])]
+    (map :steamid players)))
+
+(re/reg-event-fx :try-get-games
+                 (fn [{:keys [db]}]
+                   (let [steamids-string (->> db steamids (map #(str "steamids[]=" %)) (s/join "&"))
+                         uri (str base-url "/common-games?" steamids-string)]
+                     {
+                      :http-xhrio {:method          :get
+                                   :uri             uri
+                                   :format          (ajax/json-request-format)
+                                   :response-format (ajax/json-response-format {:keywords? true})
+                                   :on-success      [:on-games-fetched]
+                                   :on-failure      [:on-games-fetch-error]}
+                      :db         (assoc db :loading? true)
+                      })))
+
+(re/reg-event-db :on-games-fetched
+                 (fn [db event]
+                   (let [games (second event)]
+                     (-> db
+                         (assoc :loading? false)
+                         (assoc :error "")
+                         (assoc :no-games-found (-> games count (= 0)))
+                         (assoc :games games)))))
+
+(re/reg-event-db :on-games-fetch-error
+                 (fn [db _]
+                   (-> db
+                       (assoc :loading? false)
+                       (assoc :error "Error getting games"))))

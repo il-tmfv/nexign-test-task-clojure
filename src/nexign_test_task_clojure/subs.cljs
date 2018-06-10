@@ -32,4 +32,12 @@
             (fn [db _]
               (:players db)))
 
+(re/reg-sub :games
+            (fn [db _]
+              (:games db)))
+
+(re/reg-sub :no-games-found
+            (fn [db _]
+              (:no-games-found db)))
+
 
