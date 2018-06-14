@@ -6,9 +6,17 @@ To start the local ClojureScript frontend:
 lein figwheel
 ```
 
-To start the server: clone [this repo](https://github.com/il-tmfv/nexign-test-task) and
+Clojure server located [here](https://github.com/il-tmfv/nexign-test-task-server-clojure). Clone it and 
+```
+STEAM_API_KEY=XXXXX lein ring server-headless 3333
+```
+
+-OR-
+
+Clone [this repo](https://github.com/il-tmfv/nexign-test-task) and
 ```
 yarn
 STEAM_API_KEY=XXXXX yarn server
 ```
-XXXXX - your steam API key
+
+_XXXXX - your steam API key_
